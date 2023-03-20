@@ -1,0 +1,13 @@
+{
+	"skeleton":{
+        "atck" :[{"id":0,"sid":0}],
+        "death":[{"id":1,"sid":1}],
+        "hurt" :[{"id":0,"sid":2},{"id":1,"sid":3},{"id":2,"sid":4}]
+	},
+    "player":{
+        "food":[{"id":0, "sid":5}],
+        "diamond":[{"id":0, "sid":6}],
+        "death":[{"id":0, "sid":7}],
+        "atck":[{"id":0, "sid":8}, {"id":1, "sid":9},{"id":2, "sid":10},{"id":3, "sid":11},{"id":4, "sid":12}]
+    }
+}   

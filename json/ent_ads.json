@@ -1,0 +1,22 @@
+{
+	"skeleton":{
+		"idle":{
+			"repeat":true,
+			"frames":[
+				{"id":0, "tid":0, "ft":0.25},
+				{"id":1, "tid":1, "ft":0.25},
+				{"id":2, "tid":2, "ft":0.25},
+				{"id":3, "tid":3, "ft":0.25}
+			]
+		},
+		"atck":{
+			"repeat":true,
+			"frames":[
+				{"id":4, "tid":4, "ft":0.25},
+				{"id":5, "tid":5, "ft":0.25},
+				{"id":6, "tid":6, "ft":0.25},
+				{"id":7, "tid":7, "ft":0.25}
+			]
+		}
+	}
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Final Project</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/p5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.4.2/lib/addons/p5.sound.min.js"></script>
+	
+    <script src="js/math/matrix4x4.js"></script>     <!-- matrix 4x4 libary 	    -->
+    <script src="js/math/vector.js"></script>     	 <!-- vector libary 				  -->
+    <script src="js/utils/state.js"></script>        <!-- state machine libary 	 	-->
+    <script src="js/utils/buffers.js"></script>      <!-- general data buffers 		-->
+    <script src="js/utils/data.js"></script>      	 <!-- general data structures -->
+    <script src="js/utils/voxel.js"></script>      	 <!-- voxel meshing 				  -->
+
+    <script src="js/gl/gfx.js"></script>        <!-- simplified webgl library 	-->
+    <script src="js/gl/mesh.js"></script>       <!-- primitive meshes library 	-->
+    <script src="js/gl/view.js"></script>       <!-- viewing context library 		-->
+    <!-- <script src="debug/cbox.js"></script> -->       <!-- viewing context library 		-->
+    <!-- <script src="debug/cscene.js"></script> -->     <!-- viewing context library 		--> 
+    <script src="debug/actors.js"></script>		 	<!-- main sketch (entry)	 	   	-->
+    <script src="debug/main2.js"></script>		 	<!-- main sketch (entry)	 	   	-->
+    <script src="debug/scene.js"></script>		 	<!-- main sketch (entry)	 	   	-->
+    <style>
+		body {
+			background: black;
+			border: none;
+			font-family: Verdana;
+			color:white;
+		}
+		#center_view {
+			display:flex;
+			flex-direction:column;
+			justify-content:center;
+			align-items:center;
+			border: none;
+			gap:20px;
+		}
+		#center_flexbox {
+			display:flex;
+			justify-content:center;
+			align-items:center;
+			border: 3px solid white;
+		}
+       	#controls {
+           	margin: auto;
+            text-align: center;
+            padding-top: 20px;
+        }
+		.nomargin {
+			margin-top:4px;
+			margin-bottom:4px;
+		}
+		.text {
+			gap:15px;
+			text-align:center;
+		 }
+		hl {
+			color:yellow;
+		}
+		hl2 {
+			color:orange;
+		}
+		hl3 {
+			color:red;
+		}
+	</style>
+  </head>
+  <body>
+		<div id="center_view">
+			<div id="center_flexbox"></div>
+				<div id="controls">
+      				<hl>FUDGE FACTOR</hl>: <input type="range" id="padding" min="0" max="2" value="1" step="0.1" oninput="changeFudge(this);"><br>
+					<div class="text">
+						<hl3>CONTROLS:</hl3>
+						<p class="nomargin"><hl>W</hl>,<hl>A</hl>,<hl>S</hl>,<hl>D</hl> to move around the scene.</p>
+						<p class="nomargin"><hl>Use the mouse</hl> to rotate the camera.</p>
+						<p class="nomargin"><hl>Press escape twice</hl> to exit pointer lock.</p>
+						<p class="nomargin"><hl>Hover the mouse out and back into the window</hl> to re-enter pointer lock.</p>
+					</div>
+				<p style="width:750px;">Hello, this is an experimental game engine! This program constructs a voxel environment from a JSON file. <hl>Only the bounding faces of the isosurface are sent to the GPU to minimize bandwidth usage</hl>. Play around with it! <hl2> Built with WebGL and p5js. <hl2></p>
+			</div>
+		</div>
+  </body>
+</html>

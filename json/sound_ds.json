@@ -1,0 +1,17 @@
+{
+	"mds":[
+		{"id":0, "name":"skele_attack", "path":"sounds/skelattack.ogg"},
+		{"id":1, "name":"skele_death", "path":"sounds/skeldeath.ogg"},
+		{"id":2, "name":"skele_hurt0", "path":"sounds/skelhurt0.ogg"},
+		{"id":3, "name":"skele_hurt1", "path":"sounds/skelhurt1.ogg"},
+		{"id":4, "name":"skele_hurt2", "path":"sounds/skelhurt2.ogg"},
+		{"id":5, "name":"food", "path":"sounds/food.ogg"},
+		{"id":6, "name":"diamond", "path":"sounds/diamond.ogg"},
+		{"id":7, "name":"death", "path":"sounds/death.ogg"},
+		{"id":8, "name":"attack0", "path":"sounds/attack0.ogg"},
+		{"id":9, "name":"attack1", "path":"sounds/attack1.ogg"},
+		{"id":10, "name":"attack2", "path":"sounds/attack2.ogg"},
+		{"id":11, "name":"attack3", "path":"sounds/attack3.ogg"},
+		{"id":12, "name":"attack4", "path":"sounds/attack4.ogg"}
+	]
+}

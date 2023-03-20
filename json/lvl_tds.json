@@ -1,0 +1,14 @@
+{
+	"imgfp":"images/lvl_bleed.png",
+	"tds":[
+        {"id":0,"name":"empty",    "ox": 1, "oy": 1, "w":16, "h":16},
+        {"id":1,"name":"stone_0",  "ox":19, "oy": 1, "w":16, "h":16},
+        {"id":2,"name":"stone_1",  "ox":37, "oy": 1, "w":16, "h":16},
+        {"id":3,"name":"stone_2",  "ox":37, "oy":19, "w":16, "h":16},
+        {"id":4,"name":"stone_3",  "ox":55, "oy": 1, "w":16, "h":16},
+        {"id":5,"name":"stone_4",  "ox":19, "oy":19, "w":16, "h":16},
+        {"id":6,"name":"stone_5",  "ox":55, "oy":19, "w":16, "h":16},
+        {"id":7,"name":"dirt_0",   "ox": 1, "oy":19, "w":16, "h":16},
+        {"id":8,"name":"grvl_0",   "ox": 1, "oy":37, "w":16, "h":16}
+    ]
+}

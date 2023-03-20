@@ -1,0 +1,8 @@
+{
+	"mds":[
+		{"id":0, "bpm":146, "name":"March of the Profane", "path":"tracks/track0.mp3"},
+		{"id":1, "bpm":146, "name":"Dance of the Decorous", "path":"tracks/track1.mp3"},
+		{"id":2, "bpm":140,	"name":"For Whom the Knell Tolls", "path":"tracks/track2.mp3"},
+		{"id":3, "bpm":130, "name":"Rhythmortis", "path":"tracks/track3.mp3"}
+	]
+}
