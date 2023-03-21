@@ -1054,9 +1054,9 @@ const RENDER_FSM = new FSM([{
 		}
 
 		man.ent.write_diamondtid=(id1,id2)=> {
-			const SDATA = man.tileset.tdl;
-			// console.log(SDATA);
-			// SDATA.write_tid(id1,id2);
+			const SDATA = man.entset.tdl;
+			console.log(SDATA);
+			SDATA[id1] = SDATA[id2];
 		}
 		textSize(36);
 	},
@@ -1211,7 +1211,7 @@ const RENDER_FSM = new FSM([{
 		GL_USE_PROGRAM(ctx, program);
 
 		// const mesh = QUAD_MESH_TDS(man.entset.tdl[0], man.entset.img.width,man.entset.img.height,12/32,14/32);
-		const mesh = QUAD_MESH_SPRITE(man.entset.tdl[14], man.entset.img.width, man.entset.img.height, 10/32,12/32);
+		const mesh = QUAD_MESH_SPRITE(man.entset.tdl[14], man.entset.img.width, man.entset.img.height, 12/32,14/32);
 		const ent_vertex_buffer = ctx.createBuffer();
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, ent_vertex_buffer);
 		ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(mesh), ctx.STATIC_DRAW);
@@ -1226,7 +1226,8 @@ const RENDER_FSM = new FSM([{
 
 		man.ent_mesh = mesh;
 		man.ent_vertex_buffer = ent_vertex_buffer;
-		man.ent_matrix = mTranslate4x4(5.5,5/32,5.5);
+		man.ent_matrix = mTranslate4x4(5.5,7/32,5.5);
+		man.project = GL_DEBUG_PERSPECTIVE(man.p5gl.p5b.width,man.p5gl.p5b.height,100);
 
 		man.et = 0; man.etc = 0;
 	},
@@ -1245,8 +1246,9 @@ const RENDER_FSM = new FSM([{
 		this.draw_world(fsm,man);
 		this.draw_ents(fsm,man);
 
-		IS_HURT = false;
+		man.project = GL_DEBUG_PERSPECTIVE(man.p5gl.p5b.width,man.p5gl.p5b.height,man.lfv.lerp(it).x());
 
+		IS_HURT = false;
 // if we received damage
 		if(pattr.ishurt()) {
 			let it = (con.time() - pattr.lhtime())/pattr.thtime();
@@ -1266,7 +1268,7 @@ const RENDER_FSM = new FSM([{
 // sine bounce curve (works a bit nicer)
 		let rit = 1 + 0.125*Math.sqrt(Math.sin(Math.PI*itg.delta(con.time(),con.crotchet())));
 		const hp_offs = new vec2(0.04*width, 0.05*height);
-		const sc_offs = new vec2(0.96*width, 0.05*height);
+		const sc_offs = new vec2(0.94*width, 0.05*height);
 
 // reset tint for UI
 		p5b.imageMode(CENTER);
@@ -1298,7 +1300,7 @@ const RENDER_FSM = new FSM([{
 		GL_INIT_VERTEXATTR(ctx, program);
 // set uniforms before draw
 		GL_SET_UNIFORM(ctx, program, '1f', 		  'uFudgeFactor', man.fudge);
-		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uProject', 	 false, GL_DEBUG_PERSPECTIVE(width,height));
+		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uProject', 	 false, man.project);
 		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uViewMatrix', false, mInverse4x4(view_matrix));
 		GL_SET_UNIFORM(ctx, program, '1i', 		  'uSampler', 1);
 
@@ -1308,7 +1310,7 @@ const RENDER_FSM = new FSM([{
 			const sprite = SPRITE_LIST.data()[i];
 			if(sprite && sprite.id() > 0) {
 				const pos = sprite.pos();
-				em[12] = pos._x; em[13] = -4/32 + pos._y + sprite.oy()/32; em[14] = pos._z;
+				em[12] = pos._x; em[13] = -2/32 + pos._y + sprite.oy()/32; em[14] = pos._z;
 				const tds = man.entset.tdl[sprite.sid() % man.entset.tdl.length];
 				const min_u = MIN_U(tds,iw,ih); const min_v = MIN_V(tds,iw,ih);
 				GL_SET_UNIFORM(ctx, program, '2f', 'uUVOffset', min_u, min_v);
@@ -1339,7 +1341,7 @@ const RENDER_FSM = new FSM([{
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, vertex_buffer);
 // set uniforms before draw
 		GL_SET_UNIFORM(ctx, program, '1f', 		  'uFudgeFactor', man.fudge);
-		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uProject', 	 false, GL_DEBUG_PERSPECTIVE(p5b.width,p5b.height));
+		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uProject', 	 false, man.project);
 		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uViewMatrix', false, mInverse4x4(view_matrix));
 		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uMatrix', 	 false, matrix);
 		GL_SET_UNIFORM(ctx, program, 'Matrix4fv', 'uInvMatrix',  false, mInverse4x4(matrix));

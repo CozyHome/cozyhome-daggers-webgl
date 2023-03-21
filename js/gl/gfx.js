@@ -439,8 +439,7 @@ const GL_DEBUG_ELEMENTS=(ctx, program, tbuffer, tri_count, view_matrix, matrix)=
 
 // taken from MDN documentation
 // https://jsfiddle.net/tatumcreative/86fd797g/
-const GL_DEBUG_PERSPECTIVE=(w,h)=> {
-	const fov = 0.5;
+const GL_DEBUG_PERSPECTIVE=(w,h,fov=90)=> {
 	const aspect = w/h;
 	const near = 0.1;
 	const far = 100;
@@ -448,7 +447,7 @@ const GL_DEBUG_PERSPECTIVE=(w,h)=> {
 }
 
 const GL_PERSPECTIVE_MATRIX=(fov, aspect, near, far)=> {
-	const f = 1 / Math.tan(fov / 2);
+	const f = 1 / Math.tan((fov)*Math.PI/720);
 	return [
 		f/aspect,	    0, 						  0, 			0,
 		0,				f,						  0,			0,

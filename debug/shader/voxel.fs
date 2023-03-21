@@ -13,7 +13,7 @@
 
 	void main() {
 		vec3 tex  = texture(uSampler, vUV).rgb;
-		float fog = clamp(1. - vPos.z/8., 0., 0.25);
+		float fog = clamp(1. - vPos.z/8., 0., 0.45);
 		
 		//tex = //mix(vec3(0.),tex, clamp(vNor.z + abs(vNor.y), 0.6, 1.0));
 		fragColor = vec4(mix(vec3(0.), tex, fog), 1.);
