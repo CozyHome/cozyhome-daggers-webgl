@@ -89,13 +89,11 @@ const FLUSH_GL=(p5gl)=> {
 	const p5c = p5gl.p5c;
 	noSmooth();
 
-
 	image(glb,0,0,p5c.width,p5c.height);
 	image(p5b,0,0,p5c.width,p5c.height);
-	
 
 	glb.clear();
-	glb.background(30,30,0);
+	glb.background(10,5,5);
 }
 
 function preload() {
@@ -103,7 +101,7 @@ function preload() {
 }
 
 function setup() {
-	P5GL = BOOTSTRAP_P5GL(960,720,960/3,720/3);
+	P5GL = BOOTSTRAP_P5GL(1280,720,1280/4,720/4);
 	SCENE_E = CONSTRUCTOR_P5GL_FSE(GAME_FSM, P5GL);
 }
 
