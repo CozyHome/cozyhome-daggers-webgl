@@ -4,7 +4,7 @@ class ViewContext3D {
 // rot :+ vec3 euler angles
 	constructor(pos, rot) {
 		this.#_cm = new Matrix4x4();
-		if(pos != null) this.#_cm.translate(pos.f4D());
+		if(pos != null) this.#_cm.translate(pos.f4d());
 		if(rot != null) {
 			this.#_cm.rotx(rot.x()*Math.PI/180);
 			this.#_cm.roty(rot.y()*Math.PI/180);
@@ -65,6 +65,15 @@ class ViewContext3D {
 					  mul3(wish._x, this.rgt()))
 		);
 		this.#_cm.setcol(3, pos.f4D());
+	}
+	bind=(pos,fwd,fov)=> {
+		this.#_cm.setcol(3, [+pos._x,+pos._y,+pos._z, 1]);
+		const rgt = mTD4x4(mRoty4x4(90*Math.PI/180), fwd);
+		this.#_cm.setcol(2, [fwd._x,fwd._y,fwd._z,0]); // fwd
+		this.#_cm.setcol(0, [rgt._x,rgt._y,rgt._z,0]); // fwd
+		// const rgt = mTD4x4(mRoty4x4(90*Math.PI/180), fwd);
+		// console.log(...rgt.f3d());
+		// this.#_cm.setcol(1, [rgt._x,rgt._y,rgt._z]); // rgt
 	}
 
 	pos=()=> { return this.#_cm.getvec(3); }

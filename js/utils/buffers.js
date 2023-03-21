@@ -31,7 +31,7 @@ class ImageBuffer {
 	glc=() 		=> this.#_gl;
 }
 
-class BufferUI32_2D { 
+class BufferI32_2D { 
 // contains unsigned int 32s
 // used for buffers that act as if they are two dimensional, but really aren't.
 // p := number of uint32s per coordinate pair (w,h)

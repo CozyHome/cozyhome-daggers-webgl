@@ -169,7 +169,7 @@ const plane2 = (p,n,l=512,r=25,glc) => {							 // draws a plane in p5 graphics
 	draw2p(p,mul2(r,unit2(n)),glc);
 }
 class vec2 {
-	constructor(x,y) {
+	constructor(x=0,y=0) {
 		this._x=x;
 		this._y=y;
 	}
@@ -189,9 +189,7 @@ class vec2 {
 // enter, exit, inbetween (tweening) very useful for transience
 class lerped2 {
 	constructor() {}
-	binds=(a)=> {
-		this.bind(a,a);
-	}
+	binds=(a)=> { this.bind(a,a); }
 	bind=(a,b)=> {
 		this._a=a;
 		this._b=b;
@@ -207,7 +205,7 @@ class lerped2 {
 }
 //vec3
 const add3 = (v,w) => new vec3(v.x()+w.x(),v.y()+w.y(), v.z()+w.z());
-const sub3 = (v,w) => new vec3(v.x()-w.x(),v.y()-w.y(), v.z()+w.z());
+const sub3 = (v,w) => new vec3(v.x()-w.x(),v.y()-w.y(), v.z()-w.z());
 const mul3 = (c,v) => new vec3(c*v.x(),c*v.y(),c*v.z());
 const dot3 = (v,w) => v.x()*w.x()+v.y()*w.y()+v.z()*w.z();
 const norm3 = (v) => Math.sqrt(dot3(v,v));
@@ -247,8 +245,17 @@ const sangle3 = (v,w,u) => {
 
 	return Math.sign(dot3(c, u)) * Math.acos(dot3(v,w)) * 180 / Math.PI;
 }
+const perp3_z = (v) => {									 // orthogonal complement of vector
+	return new vec3(v.z(), v.y(), -v.x());
+}
+const rot3_y = (a,v) => { 								 // vector rotation
+	a *= Math.PI / 180;
+	const sa = Math.sin(a);
+	const ca = Math.cos(a);
+	return new vec3(v.x()*ca - v.z()*sa, v.y(), v.x()*sa + v.z()*ca);
+}
 class vec3 {
-	constructor(x,y,z) {
+	constructor(x=0,y=0,z=0) {
 		this._x=x;
 		this._y=y;
 		this._z=z;
@@ -256,8 +263,8 @@ class vec3 {
 	x=()=>this._x;
 	y=()=>this._y;
 	z=()=>this._z;
-	f3D=()=>[this._x, this._y, this._z];
-	f4D=()=>[this._x, this._y, this._z, 1];
+	f3d=()=>[this._x, this._y, this._z];
+	f4d=()=>[this._x, this._y, this._z, 1];
 	n4D=()=>[this._x, this._y, this._z, 0];
 	at=(i)=> {
 		switch(i) {
@@ -267,4 +274,15 @@ class vec3 {
 			case 3: return z;
 		}
 	}
+}
+// tuples that should be considered as three states:
+// enter, exit, inbetween (tweening) very useful for transience
+class lerped3 {
+	constructor() {}
+	binds=(a)=>  { this.bind(a,a); }
+	bind=(a,b)=> { this._a=a; this._b=b; }
+	lerp=(t)=>   { return lerp3(this._a, this._b, t); }
+	slerp=(t)=>  { return unit3(this.lerp(t)); }
+	a=()=>this._a; // start
+	b=()=>this._b; // end
 }

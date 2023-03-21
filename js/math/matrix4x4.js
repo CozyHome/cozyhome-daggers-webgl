@@ -120,3 +120,16 @@ const Matrix4x4 = function() {
 			top--;
 	}
 }
+
+// faster syntax for a matrix direction transform with vec3 type
+const mTD4x4=(m,v)=> {
+	let p=[v.x(),v.y(),v.z(),0];
+	p = mTransform4x4(m,p);
+	return new vec3(p[0],p[1],p[2]);
+}
+// faster syntax for a matrix point transform with vec3 type
+const mT4x4=(m,v)=> {
+	let p=[v.x(),v.y(),v.z(),1];
+	p = mTransform4x4(m,p);
+	return new vec3(p[0],p[1],p[2]);
+}

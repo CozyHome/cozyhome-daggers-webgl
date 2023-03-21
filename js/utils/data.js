@@ -8,6 +8,244 @@
 //		class UIDHandler :=	  arraylist stack responsible for generating, removing, and assigning unique UIDs.
 // }
 
+class Integrator {
+	#_onbt; #_nt; #_lt; #_nqn;
+	constructor() {
+		this.#_nt=0; this.#_lt=0; this.#_nqn=0; this.#_onbt=null;
+	}
+// where t := time position and c := crotchet duration
+	integrate=(t,c)=> {
+		if(t >= this.#_nt) {
+			this.#_lt = this.#_nt;
+// p5js has a habit of not running when tabs are switched. This causes the difference
+// between the current song position and the last acknowledged time to grow. As a result,
+// our integrations pile on top of each other as if we were 'zooming' to catch up. I don't
+// particulary like this. this is the updated formula to fix this:
+			this.#_nt += Math.ceil((t - this.#_lt)/c) * c;
+			this.#_nqn++;
+			if(this.#_onbt != null) this.#_onbt(this);
+		}
+	}
+	bind=(onbt) => this.#_onbt = onbt;
+	delta=(t,c)	=> (t-this.#_lt) / c; 	// [0,1] range between last and next qrtr note
+	next=()		=> this.#_nt;		 	// time position of next qrtr note
+	last=()		=> this.#_lt;		 	// time position of last qrtr note
+	nqn=()		=> this.#_nqn;			// number of quarters
+}
+
+// keeps track of all time variables used to simulate the gamestate
+class Conductor {
+	#_bpm; #_bps; #_plyr; #_crotchet;
+	constructor(plyr) {
+		this.#_plyr = plyr;
+	}
+	bind=(tid)=> {
+		this.#_plyr.switch_track(tid);
+		this.#_bpm = this.#_plyr.track_bpm();
+		this.#_bps = this.#_bpm / 60;
+		this.#_crotchet = 60 / this.#_bpm;
+	}
+	play=()=> {
+		this.#_plyr.play_track();
+	}
+	pause=()=> {
+		this.#_plyr.pause_track();
+	}
+	ftime=()	=> 	millis()/1000;
+	time=()		=>  this.#_plyr.track_time();
+	length=()	=>	this.#_plyr.track_length();
+	bpm=()		=>	this.#_bpm;
+	bps=()		=>	this.#_bps; 					// nicer unit to work with
+	crotchet=()	=>	this.#_crotchet;
+}
+
+class BeatEntity {
+	#_fsm; #_man; #_id;
+	constructor() {}
+	bind(vals) {
+		this.#_id		= vals.id;
+		this.#_fsm 		= vals.fsm;
+		this.#_man 		= {
+			_cur:null, // assign first state
+			cur() { return this._cur; },
+			setcur(nxt) { this._cur = nxt; },
+			conductor: vals.inits.conductor,
+			level:vals.inits.level,
+			integrator: new Integrator(),
+		};
+// attach the UID operator inside of the BeatEntity. Otherwise, JS would
+// get mad at us.
+		this.#_man.uid = ()=> { return this.uid(); }
+// also include a remove function
+		this.#_man.remove = ()=> { this.remove(); }
+		this.#_man.ent = this;
+
+		if(vals.overrider != null) vals.overrider(this.#_man);
+		this.#_fsm.setup(this.#_man); 			// setup man
+		this.#_fsm.set(this.#_man, 'init');
+	}
+	pulse=()=> {
+		const man = this.#_man;
+		const fsm = this.#_fsm;
+		const con = man.conductor;
+		const itg = man.integrator;
+		const crotchet = con.crotchet();
+		const time = con.time();
+		itg.integrate(time, crotchet);
+		fsm.pulse(man);
+	}
+	uid=()=> { return this.#_id; }
+	remove=()=> {
+		ENTITY_LIST.rem_obj(this.#_id, (ent)=> {
+			this.#_id = 0; // assign to zero to signify it is gone
+		});
+	}
+}
+
+class Board {
+	#_buf;
+	constructor(dim, col) {
+		const w = ~~dim.x();
+		const h = ~~dim.y();
+		this.#_buf = new BufferI32_2D(w,h,1);
+		const dat = this.#_buf.data();
+		const s = this.#_buf.s();
+		for(let i = 0;i < s;i++) {
+			dat[i]=col[i];
+		}
+	}
+// given two coordinates, swap their ids
+	swap=(x1,y1,x2,y2)=> {
+		const b = this.#_buf;
+		const d = b.data();
+		const i1 = (x1+y1*b.w());
+
+		const i2 = (x2+y2*b.w());
+		const id1 = d[i1];
+		d[i1] = d[i2];
+		d[i2] = id1;
+	}
+	swapf=(x1,y1,x2,y2)=> {
+		const b = this.#_buf;
+		const d = b.data();
+		const i1 = ((~~x1)+(~~y1)*b.w());
+
+		const i2 = ((~~x2)+(~~y2)*b.w());
+		const id1 = d[i1];
+		d[i1] = d[i2];
+		d[i2] = id1;
+	}
+// set a particular coordinate to a number
+	set=(x,y,id)=> {
+		const b = this.#_buf;
+		const d = b.data();
+		d[(x+y*b.w())] = id;
+	}
+	setf=(x,y,id)=> {
+		const b = this.#_buf;
+		const d = b.data();
+	
+		d[((~~x)+(~~y)*b.w())] = id;
+	}
+	sample=(x,y)=> { return this.#_buf.sample(x,y,0); }
+	samplef=(x,y)=> { 
+		return this.#_buf.sample(~~x,~~y,0);
+	}
+	buf=()=> this.#_buf;
+}
+
+// maps signals to real numbers
+class InputMap {
+	#_pk; #_nk; #_pv; #_nv; #_dv; #_lv; #_h;
+	constructor(pk,nk,pv,nv,dv,h=false) {
+		this.#_pk=pk; // positive keycode
+		this.#_nk=nk; // negative keycode
+		this.#_pv=pv; // positive value
+		this.#_nv=nv; // negative value
+		this.#_dv=dv; // dead value
+		this.#_lv=dv; // last value
+		this.#_h = h; // can we be continuously held down?
+	}
+	eval=()=> {
+		let vl = this.#_dv;
+		if(this.down(this.#_pk) && !this.down(this.#_nk)) vl = this.#_pv;
+		if(!this.down(this.#_pk) && this.down(this.#_nk)) vl = this.#_nv;
+// check for holding down
+		if(this.#_h) {
+			return vl;
+		}else {
+			if(vl != this.dead() && vl == this.#_lv) vl = this.dead();
+			else this.#_lv = vl;
+		}
+		return vl;
+	}
+	low=() 		=> this.#_nv;
+	dead=()		=> this.#_dv;
+	high=()		=> this.#_pv;
+	down=(kc) 	=> { return keyIsDown(kc);}
+}
+// associates input maps to durational signals
+class BufferedInput {
+	#_nt; #_im; #_act; #_p; #_ct; #_bv;
+	constructor(im,p) {
+		this.#_im   = im; 		 // input mapper
+		this.#_nt   = 0;  		 // next time
+		this.#_p    = p;  		 // priority
+		this.#_ct   = 0;  		 // capture time
+		this.#_bv   = im.dead(); // buffered value
+		this.#_act  = false; 	 // is active
+	}
+// this is with respect to a time signature and a number line
+	rhythm=(t, c, e, onlate)=> { // time position, duration, epsilon
+		const im = this.#_im;
+		const evl = im.eval();
+		if(evl != im.dead()) {
+			const fence = c*(1+Math.floor(t/c));
+			const early = t > fence - e;
+			const late =  t < fence + e;
+			if(early) {
+				this.#_act = true;
+				this.#_bv  = evl;
+				return;
+			}
+			if(late && onlate != null) {
+				this.#_act = true;
+				this.#_bv  = evl;
+				onlate();
+				return;
+			}
+		}
+	}
+	clear=()=> {
+		const im   = this.#_im;
+		this.#_bv  = im.dead();
+		this.#_act = false;
+	}
+// standard capture (without rhythm)
+	capture=(et, dt)=> {
+		const im = this.#_im;
+		const evl = im.eval();
+		if(this.#_act) {
+			if(et > this.#_nt) {
+				this.#_act = false;		// we are no longer active.
+				this.#_bv  = im.dead(); // after toggling, reset to dead.	
+			}
+		}else {
+// set to toggle. begin countdown.
+			if(evl != im.dead()) {
+				this.#_act 	= true; 		// we are active.
+				this.#_ct 	= this.#_nt;	// set capture time
+				this.#_nt 	+= dt;			// set next time
+				this.#_bv   = evl;			// set buffered value
+			}
+		}
+	}
+	bval=()=>this.#_bv;
+	act=()=>this.#_act;
+	captime=()=>this.#_ct;
+	priority=()=>this.#_p;
+}
+
 // simple list of objects that can be overridden after destructing.
 class ObjectList {
 	#_objs; #_uidh;
@@ -31,7 +269,7 @@ class ObjectList {
 	}
 	get_obj=(uid)=> {
 // if requested UID is zero: return null
-		if(uid==0) return null;
+		if(uid==0 || uid >= this.length()) return null;
 // if the entity in question houses a zero uid, that means its dead: return null		
 		const obj = this.#_objs[uid];
 		if(obj.uid() == 0) return null;
@@ -257,11 +495,11 @@ class HUDContext {
 			{ix:59, iy:23, iw:6, ih:6}, // .
 		]
 	}
-	draw_integral=(i,cx,cy,scl,pad)=> { // very beautiful algorithm :)
+	draw_integral=(p5b,i,cx,cy,scl,pad)=> { // very beautiful algorithm :)
 		let ix = cx;
 		const sd = this.#_numberdim;
 		let m10 = 1;
-		if(i==0) {this.draw_sprite(ix,cy,scl,sd[0]); return; }
+		if(i==0) {this.draw_sprite(p5b,ix,cy,scl,sd[0]); return; }
 // raise pow until floor is zero
 		for(;m10<10000;m10*=10) { 
 			if(~~(i/m10)==0) break;
@@ -270,43 +508,109 @@ class HUDContext {
 			let slice = ~~(i / m10);
 			i -= slice * m10;
 			m10 = ~~(m10/10);
-			this.draw_sprite(ix,cy,scl,sd[slice]);
+			this.draw_sprite(p5b,ix,cy,scl,sd[slice]);
 			ix += sd[slice].iw*scl+pad;
 		}
 	}
-	draw_score=(sc,cx,cy,dx,dy,scl,iscl)=> {
+	draw_score=(p5b,sc,cx,cy,dx,dy,scl,iscl)=> {
 		const sd = this.#_scoredim;
-		this.draw_sprite(cx,cy,scl,sd);
-		this.draw_integral(sc,cx+dx,cy+dy,iscl,0);
+		this.draw_sprite(p5b,cx,cy,scl,sd);
+		this.draw_integral(p5b,sc,cx+dx,cy+dy,iscl,0);
 	}
 // mhp:=max hp, chp:= cur hp, cx:= initial x, cy:= initial y
-	draw_hearts=(mhp,chp,cx,cy,scl,rit)=> {
+	draw_hearts=(p5b,mhp,chp,cx,cy,scl,rit)=> {
 		let pad = 6;
 		let ix=cx; let i=0;
 		const fd = this.#_fullhdim;
 		const hd = this.#_halfhdim;
 		const ed = this.#_empthdim;
 		for(;i<chp-1;i+=2) {
-			this.draw_sprite(ix, cy, (i==chp-2)?scl*rit:scl, fd);
+			this.draw_sprite(p5b,ix, cy, (i==chp-2)?scl*rit:scl, fd);
 			ix += fd.iw*scl+pad;
 		}
 // if i is not a multiple of two, it will not equal chp. Therefore, this
 // means we must draw half a heart.
 		if(i != chp) {
 			const hd = this.#_halfhdim;
-			this.draw_sprite(ix, cy, scl*rit, hd);
+			this.draw_sprite(p5b,ix, cy, scl*rit, hd);
 			i+=2;
 			ix += hd.iw*scl+pad;
 		}
 		for(;i<mhp;i+=2) {
-			this.draw_sprite(ix, cy, scl, ed);
+			this.draw_sprite(p5b,ix, cy, scl, ed);
 			ix += fd.iw*scl+pad;
 		}
 	}
-	draw_sprite=(cx, cy, scl, sd)=> {
+	draw_sprite=(p5b,cx, cy, scl, sd)=> {
 		const img 	= this.#_img;
-		image(img, cx, cy, sd.iw*scl, sd.ih*scl, sd.ix, sd.iy, sd.iw, sd.ih);
+		p5b.image(img, cx, cy, sd.iw*scl, sd.ih*scl, sd.ix, sd.iy, sd.iw, sd.ih);
 	}
+}
+
+class BillboardContext {
+	#_id;
+	#_pos;			// world position
+	#_tx;			// texture offset (used when clipping sprites)
+	#_sd;			// sprite descriptor
+	#_ox; #_oy;		// offsets
+	constructor() {}
+	bind(vals) {
+		this.#_id   = vals.id;
+		this.#_pos 	= vals.pos;
+		this.#_ox	= vals.ox;
+		this.#_oy	= vals.oy == null ? 0 : vals.oy;
+		this.#_sd	= vals.sd;
+	}
+	bind_id=(id)	=> { this.#_id = id; }
+	bind_ox=(ox)	=> { this.#_ox = ox; }
+	bind_oy=(oy)	=> { this.#_oy = oy; }
+	bind_pos=(pos)	=> { this.#_pos = pos; }
+	bind_sd=(sd)	=> { this.#_sd = sd; }
+	id=()	=>  this.#_id;
+	sid=()	=> 	this.#_sd;
+	pos=()	=>  this.#_pos;
+	tx=()	=> 	this.#_tx;
+	ox=()	=> 	this.#_ox;
+	oy=()	=> 	this.#_oy;
+}
+
+// jlvl := json object data loaded from I/O
+// dim := the level dimensions that will define several buffers in use (these will grow over time)
+// loaded := whether or not the level has finished loading from I/O
+// rbuf := render buffer used during the DDA-raycast procedure
+// cbuf := collision buffer used during the physics procedure
+class LevelContext {
+	#_jlvl; #_dim;
+	#_rbuf; #_cbuf;
+	#_tset;
+
+	constructor(jlvl, tset) {
+		this.#_jlvl 	= jlvl;
+		this.#_dim		= new vec2(Math.floor(jlvl.dim[0]), Math.floor(jlvl.dim[1]));
+		this.#_tset 	= jlvl.tileset;
+// RENDER BUFFER ALLOCATION
+		const w			= this.#_dim.x(); 			// x dim
+		const h			= this.#_dim.y(); 			// y dim
+		this.#_rbuf		= new BufferI32_2D(w,h,2);
+		const s			= this.#_rbuf.s();		
+		const rbd		= this.#_rbuf.data();
+		let i=0;
+		for(;i<w*h;i++) { 							// POPULATE
+			rbd[i]	 	= jlvl.r_sectors[i][0];		// PLANAR FACES
+			rbd[i+w*h] 	= jlvl.r_sectors[i][1];		// UP AND DOWN FACES
+		}
+// COLLISION BUFFER ALLOCATION
+		this.#_cbuf		= new BufferI32_2D(w,h,1);
+		const cbd		= this.#_cbuf.data();
+// read the level geometry walls that are not zero
+		for(i=0;i<w*h;i++) {
+			cbd[i]		= jlvl.r_sectors[i];
+		}
+	}
+	dim=()=>this.#_dim;
+	rbf=()=>this.#_rbuf;
+	cbf=()=>this.#_cbuf;
+	tset=()=>this.#_tset;
 }
 
 class Resources {
@@ -318,7 +622,6 @@ class Resources {
 	#_flipbook; 	 	// flipbook
 	#_sounds;		 	// sounds
 	#_level;		 	// level data
-	#_tileset;			// tileset
 
 // ran in preload. We no longer need to worry about callbacks.
 	constructor() {
@@ -359,7 +662,7 @@ class Resources {
 	jlvl=()=>this.#_level;
 	font=()=>this.#_font;
 	hudimg=()=>this.#_hudimg;
-	level=()=>this.#_level;
+	jlvl=()=>this.#_level;
 // provided a json path, this will load the level based on its configuration
 // from Kapp's Final Project assignment back in Fall 2022.
 // -DC @ 3/14/2023 PI DAY!~~
@@ -370,7 +673,7 @@ class Resources {
 			const r_sectors = level.r_sectors;
 	// null checking
 			if(!dim || !r_sectors) {
-				finish({error:true, level:level});
+				finish({error:true, level:level, dim:dim});
 			}
 	// type checking
 			if(Number.isInteger(dim[0]) && Number.isInteger(dim[1])) {
@@ -381,10 +684,10 @@ class Resources {
 	// if our dimensions listed do not correspond to the size of our r_sectors array, we have
 	// an invalid dimension set, return
 				if(r_sectors.length > dx*dy) {
-					finish({error:true, level:level});
+					finish({error:true, level:level, dim:dim});
 					return;
 				}
-				finish({error:false, level:level});
+				finish({error:false, level:level, dim:dim});
 				return;
 			}
 		}, (error)=> { // error callback
@@ -416,6 +719,4 @@ class Resources {
 	construct_soundbook=(adsfp, assgn)=> { loadJSON(adsfp, (data)=> { assgn(data); }); }
 // loads animation data from a descriptor file
 	construct_flipbook=(adsfp, assgn)=> { loadJSON(adsfp, (data)=> { assgn(data); }); }
-// loads level data into a JSON object
-	construct_level=(lvlfp, assgn)=> { loadJSON(lvlfp, (data)=> { assgn(data); }); }
 }

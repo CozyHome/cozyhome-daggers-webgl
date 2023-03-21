@@ -1,6 +1,3 @@
-let SPRITE_LIST;
-let ENTITY_LIST;
-
 // provided a json path, this will load the level based on its configuration
 // from Kapp's Final Project assignment back in Fall 2022.
 // -DC @ 3/14/2023 PI DAY!~~
@@ -142,7 +139,6 @@ const SCENE_FSM=new FSM([{
 // program failed to compile
 		if(!man.prog) return;
 // set program type
-
 		const program = man.ent_prog;
 		const ctx = man.p5gl.ctx;
 		GL_USE_PROGRAM(ctx, program);
@@ -160,14 +156,15 @@ const SCENE_FSM=new FSM([{
 		GENERATE_VOXEL_MESH();
 // create camera
 		man.view = new ViewContext3D(new vec3(5.5,0.5,5.5),new vec3(0,0,0));
-		man.active = true;
-		man.fudge = 1;
+		man.active = true; man.fudge = 1;
 
 		man.onClick=()		=> { if(man.active) { requestPointerLock(); } };
 		man.onKey=(kc)		=> { if(kc == 27) { man.active = false; } };
 		man.mouseOut=()		=> { man.active = false; }
 		man.mouseOver=()	=> { man.active = true; }
 		man.onFudge=(v)		=> { man.fudge = v; }
+
+		ENTITY_LIST = new ObjectList(new UIDHandler(), {});
 
 		const ctx = man.p5gl.ctx;
 		this.init_world_mesh(fsm,man);
@@ -189,7 +186,6 @@ const SCENE_FSM=new FSM([{
 
 		this.draw_ents(fsm,man);
 		this.draw_world(fsm,man);
-
 	},
 	init_ent:function(fsm,man) {
 		const ctx = man.p5gl.ctx;
@@ -197,7 +193,8 @@ const SCENE_FSM=new FSM([{
 		
 		GL_USE_PROGRAM(ctx, program);
 
-		const mesh = QUAD_MESH_TDS(man.entset.tdl[0], man.entset.img.width,man.entset.img.height,12/32,14/32);
+		// const mesh = QUAD_MESH_TDS(man.entset.tdl[0], man.entset.img.width,man.entset.img.height,12/32,14/32);
+		const mesh = QUAD_MESH_SPRITE(man.entset.tdl[14], man.entset.img.width, man.entset.img.height, 12/32,14/32);
 		const ent_vertex_buffer = ctx.createBuffer();
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, ent_vertex_buffer);
 		ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(mesh), ctx.STATIC_DRAW);
@@ -214,8 +211,7 @@ const SCENE_FSM=new FSM([{
 		man.ent_vertex_buffer = ent_vertex_buffer;
 		man.ent_matrix = mTranslate4x4(5.5,14/32,5.5);
 	
-		man.et = 0;
-		man.etc = 0;
+		man.et = 0; man.etc = 0;
 	},
 	init_world_mesh:function(fsm,man) {
 		const ctx = man.p5gl.ctx;
@@ -264,32 +260,14 @@ const SCENE_FSM=new FSM([{
 		const vertex_buffer = man.ent_vertex_buffer;
 		ctx.bindBuffer(ctx.ARRAY_BUFFER, vertex_buffer);
 
-		if(man.et > 1/8) {
+		if(man.et > 1/2) {
 			let iw = man.entset.img.width;
 			let ih = man.entset.img.height;
 			const tds = man.entset.tdl[man.etc % man.entset.tdl.length];
-			const min_u = MIN_U(tds,iw,ih), max_u = MAX_U(tds,iw,ih);
-			const min_v = MAX_V(tds,iw,ih), max_v = MIN_V(tds,iw,ih);
-			
-			man.ent_mesh[6] = min_u;
-			man.ent_mesh[7] = max_v;
-			
-			man.ent_mesh[14] = min_u;
-			man.ent_mesh[15] = min_v;
-			
-			man.ent_mesh[22] = max_u;
-			man.ent_mesh[23] = max_v;
-			
-			man.ent_mesh[30] = max_u;
-			man.ent_mesh[31] = max_v;
-			
-			man.ent_mesh[38] = min_u;
-			man.ent_mesh[39] = min_v;
-			
-			man.ent_mesh[46] = max_u;
-			man.ent_mesh[47] = min_v;
+			const min_u = MIN_U(tds,iw,ih);
+			const min_v = MIN_V(tds,iw,ih);
+			GL_SET_UNIFORM(ctx, program, '2f', 'uUVOffset', min_u, min_v);
 			man.et = 0; man.etc++;
-			ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(mesh), ctx.STATIC_DRAW);
 		}
 // set proper texture
 		
@@ -355,15 +333,9 @@ const SCENE_FSM=new FSM([{
 		let ix = ~~pos.x(); let iy = ~~pos.z();
 		if(brd.bounds(ix,iy,0)) {
 			const wall_at = brd.sample(ix,iy,0);
-			console.log(wall_at);
 		}
 	}
 }]);
-
-// responsible for handling internal state for sprite objects
-class SpriteContext {
-	#_tdl;
-}
 
 // responsible for loading in the world and generating the mesh to be displayed
 class WorldContext {
@@ -392,6 +364,9 @@ class WorldContext {
 		}
 	}
 	brd=()=>{ return this.#_brd; }
+	draw_mesh=()=> {
+
+	}
 // bake the mesh via the state induced by bind(...)
 	bake_mesh=()=> {
 		const iw = this.#_tset.img.width;
@@ -534,7 +509,6 @@ class WorldContext {
 				return;
 			}
 		}
-
 // origin point for our mesh builder
 		const pt = new vec3(0,0,0);
 // for every cell in the working set, we'll want to check the adjacency state of each
@@ -573,7 +547,7 @@ const MIN_V=(tds,iw,ih)=>{ return (tds.oy) / ih; }
 const MAX_V=(tds,iw,ih)=>{ return (tds.oy + tds.h) / ih; }
 
 // primitive quad used in glue operations w.r.t tile descriptor
-const QUAD_MESH_TDS=(tds,iw=1,ih=1,ext_w=0.5,ext_h=0.5)=> {
+const QUAD_MESH_SPRITE=(tds,iw=1,ih=1,ext_w=0.5,ext_h=0.5)=> {
 	const min_u = MIN_U(tds,iw,ih), max_u = MAX_U(tds,iw,ih);
 	const min_v = MAX_V(tds,iw,ih), max_v = MIN_V(tds,iw,ih);
 	return [

@@ -2158,7 +2158,7 @@ const DIAMOND_FSM = new FSM([{
 			return Math.min(1, Math.sqrt(1 - it));
 		}
 
-		ITEMBOARD.setf(man.lps.a().x(), man.lps.a().y(), man.uid());
+		ITEMBOARD.setf(man.lps.a().x(), man.lps.a().z(), man.uid());
 
 		man.ent.take = () => { 
 			fsm.cswitch(man, 'remove'); 
@@ -2452,12 +2452,10 @@ function setup() {
 		_cur:null, // assign first state
 		cur() { return this._cur; },
 		setcur(nxt) { this._cur = nxt; },
-
 	};
 	GAME_ENTITY = { man:gman, fsm: GAME_FSM };
 	GAME_ENTITY.fsm.setup(gman);
 	GAME_ENTITY.fsm.set(gman, 'init');
-
 }
 
 function draw() {
